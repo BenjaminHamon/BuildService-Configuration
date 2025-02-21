@@ -26,6 +26,10 @@ def load_configuration(environment):
 	configuration["development_dependencies"] += [ "pylint ~= 2.7.1" ]
 	configuration["development_dependencies"] += [ "psycopg2 ~= 2.8.6", "pymongo ~= 3.11.3", "SQLAlchemy ~= 1.3.23" ]
 
+	 # Jinja's dependency MarkupSafe is downgraded to fix an import error.
+	 # See https://stackoverflow.com/questions/72191560/importerror-cannot-import-name-soft-unicode-from-markupsafe
+	configuration["development_dependencies"] += [ "MarkupSafe ~= 2.0.1" ]
+
 	configuration["project_dependencies"] = [
 		"bhamon-orchestra-cli ~= 3.0",
 		"bhamon-orchestra-model ~= 3.0",
