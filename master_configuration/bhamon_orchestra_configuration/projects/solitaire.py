@@ -1,4 +1,4 @@
-repository = "https://github.com/BenjaminHamon/Overmind.Solitaire"
+repository = "https://github.com/BenjaminHamon/Solitaire"
 
 initialization_script = "bhamon_orchestra_worker_scripts.solitaire"
 
@@ -28,7 +28,7 @@ def configure_services(environment):
 		"revision_control": {
 			"type": "github",
 			"repository": "BenjaminHamon/Overmind.Solitaire",
-			"branches_for_status": [ "master", "develop" ],
+			"branches_for_status": [ "develop" ],
 		}
 	}
 
