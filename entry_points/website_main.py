@@ -45,15 +45,15 @@ def main():
 
 	development_options = {
 		"debug": True,
-		"host": configuration["orchestra_website_listen_address"],
+		"address": configuration["orchestra_website_listen_address"],
 		"port": configuration["orchestra_website_listen_port"],
 	}
 
 	logging.getLogger("Application").info("%s %s", application_title, application_version)
 
 	application = create_application(configuration)
-	application.config["WEBSITE_ANNOUNCEMENT"] = "Development Environment"
-	application.config["WEBSITE_ANNOUNCEMENT_TYPE"] = "warning"
+	application._application.config["WEBSITE_ANNOUNCEMENT"] = "Development Environment"
+	application._application.config["WEBSITE_ANNOUNCEMENT_TYPE"] = "warning"
 	application.run(**development_options)
 
 
@@ -63,51 +63,23 @@ def parse_arguments():
 	return argument_parser.parse_args()
 
 
-def create_application(configuration): # pylint: disable = too-many-locals
-	application = flask.Flask(__name__, static_folder = None)
-	application.artifact_server_url = configuration["artifact_server_web_url"]
-	application.python_package_repository_url = configuration["python_package_repository_web_url"]
-	application.secret_key = configuration["orchestra_website_secret"]
-
+def create_application(configuration):
 	resource_paths = [
 		os.path.dirname(bhamon_orchestra_configuration.__file__),
 		os.path.dirname(bhamon_orchestra_website.__file__),
 	]
 
-	date_time_provider_instance = DateTimeProvider()
-	serializer_instance = JsonSerializer()
-	authorization_provider_instance = AuthorizationProvider()
-	service_client_instance = ServiceClient(serializer_instance, configuration["orchestra_service_url"])
+	application = website_setup.create_application(
+		flask_import_name = __name__,
+		flask_secret_key = configuration["orchestra_website_secret"],
+		orchestra_service_url = configuration["orchestra_service_url"],
+		resource_paths = resource_paths)
 
-	website_instance = Website(application, date_time_provider_instance, authorization_provider_instance, service_client_instance)
-	admin_controller_instance = AdminController(application, service_client_instance)
-	job_controller_instance = JobController(service_client_instance)
-	me_controller_instance = MeController(date_time_provider_instance, service_client_instance)
-	project_controller_instance = ProjectController(service_client_instance)
-	run_controller_instance = RunController(service_client_instance)
-	schedule_controller_instance = ScheduleController(service_client_instance)
-	user_controller_instance = UserController(date_time_provider_instance, authorization_provider_instance, service_client_instance)
-	worker_controller_instance = WorkerController(service_client_instance)
+	application._application.artifact_server_url = configuration["artifact_server_web_url"]
+	application._application.python_package_repository_url = configuration["python_package_repository_web_url"]
 
-	website_setup.configure(application, website_instance)
-	website_setup.register_handlers(application, website_instance)
-	website_setup.register_resources(application, resource_paths)
-
-	website_setup.register_routes(
-		application = application,
-		website = website_instance,
-		admin_controller = admin_controller_instance,
-		job_controller = job_controller_instance,
-		me_controller = me_controller_instance,
-		project_controller = project_controller_instance,
-		run_controller = run_controller_instance,
-		schedule_controller = schedule_controller_instance,
-		user_controller = user_controller_instance,
-		worker_controller = worker_controller_instance,
-	)
-
-	website_extensions.register_routes(application)
-
+	website_extensions.register_routes(application._application) # FIXME
+	
 	return application
 
 

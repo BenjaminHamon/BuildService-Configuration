@@ -55,7 +55,7 @@ def main():
 
 	development_options = {
 		"debug": True,
-		"host": configuration["orchestra_service_listen_address"],
+		"address": configuration["orchestra_service_listen_address"],
 		"port": configuration["orchestra_service_listen_port"],
 	}
 
@@ -72,7 +72,7 @@ def parse_arguments():
 
 
 def create_application(configuration): # pylint: disable = too-many-locals
-	application = flask.Flask(__name__)
+	file_storage_path = "."
 
 	external_services = {
 		"artifacts": FileService("artifacts", "Artifact Server", configuration["artifact_server_web_url"]),
@@ -90,57 +90,13 @@ def create_application(configuration): # pylint: disable = too-many-locals
 		database_metadata = database_metadata,
 	)
 
-	data_storage_instance = FileDataStorage(configuration["orchestra_file_storage_path"])
-	date_time_provider_instance = DateTimeProvider()
-	serializer_instance = JsonSerializer()
-	response_builder_instance = ResponseBuilder(application, serializer_instance)
-
-	authentication_provider_instance = AuthenticationProvider(date_time_provider_instance)
-	authorization_provider_instance = AuthorizationProvider()
-	job_provider_instance = JobProvider(date_time_provider_instance)
-	project_provider_instance = ProjectProvider(date_time_provider_instance)
-	run_provider_instance = RunProvider(data_storage_instance, date_time_provider_instance)
-	schedule_provider_instance = ScheduleProvider(date_time_provider_instance)
-	user_provider_instance = UserProvider(date_time_provider_instance)
-	worker_provider_instance = WorkerProvider(date_time_provider_instance)
-
-	service_instance = Service(
-		application = application,
-		response_builder = response_builder_instance,
+	return service_setup.create_application(
+		flask_import_name = __name__,
 		database_client_factory = database_client_factory,
-		authentication_provider = authentication_provider_instance,
-		authorization_provider = authorization_provider_instance,
-		user_provider = user_provider_instance,
-	)
+		file_storage_path = file_storage_path,
+		external_services = external_services)
 
-	run_controller_serializer = JsonSerializer(indent = 4)
-
-	admin_controller_instance = AdminController(response_builder_instance, external_services)
-	job_controller_instance = JobController(response_builder_instance, job_provider_instance, run_provider_instance)
-	project_controller_instance = ProjectController(application, response_builder_instance, project_provider_instance, run_provider_instance)
-	run_controller_instance = RunController(response_builder_instance, run_controller_serializer, run_provider_instance)
-	schedule_controller_instance = ScheduleController(response_builder_instance, schedule_provider_instance)
-	user_controller_instance = UserController(response_builder_instance, authentication_provider_instance, user_provider_instance)
-	worker_controller_instance = WorkerController(response_builder_instance, job_provider_instance, run_provider_instance, worker_provider_instance)
-	me_controller_instance = MeController(response_builder_instance, authentication_provider_instance, user_provider_instance, user_controller_instance)
-
-	service_setup.configure(application)
-	service_setup.register_handlers(application, service_instance)
-
-	service_setup.register_routes(
-		application = application,
-		service = service_instance,
-		admin_controller = admin_controller_instance,
-		job_controller = job_controller_instance,
-		me_controller = me_controller_instance,
-		project_controller = project_controller_instance,
-		run_controller = run_controller_instance,
-		schedule_controller = schedule_controller_instance,
-		user_controller = user_controller_instance,
-		worker_controller = worker_controller_instance,
-	)
-
-	application.config["GITHUB_ACCESS_TOKEN"] = configuration.get("github_access_token", None)
+	# FIXME: application.config["GITHUB_ACCESS_TOKEN"] = configuration.get("github_access_token", None)
 
 	return application
 
