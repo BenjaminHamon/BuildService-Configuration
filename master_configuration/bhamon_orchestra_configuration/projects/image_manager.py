@@ -30,7 +30,7 @@ def configure_services(environment):
 		"revision_control": {
 			"type": "github",
 			"repository": "BenjaminHamon/Overmind.ImageManager",
-			"branches_for_status": [ "master", "develop" ],
+			"branches_for_status": [ "develop" ],
 		}
 	}
 
